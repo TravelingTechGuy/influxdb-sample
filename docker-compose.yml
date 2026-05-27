@@ -1,0 +1,54 @@
+services:
+  influxdb:
+    image: influxdb:2
+    container_name: influxdb2-local
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
+      DOCKER_INFLUXDB_INIT_ORG: local-org
+      DOCKER_INFLUXDB_INIT_BUCKET: system_metrics
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: local-dev-token-change-me
+    volumes:
+      - ./data/influxdb2:/var/lib/influxdb2
+      - ./data/influxdb2-config:/etc/influxdb2
+
+  writer:
+    image: ghcr.io/astral-sh/uv:0.9.11-python3.14-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      PYTHONPATH: /app/src
+      UV_PROJECT_ENVIRONMENT: /tmp/uv-writer-venv
+      UV_LINK_MODE: copy
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_ORG: local-org
+      INFLUXDB_BUCKET: system_metrics
+      INFLUXDB_TOKEN: local-dev-token-change-me
+    depends_on:
+      - influxdb
+    command: >
+      sh -c "uv sync && uv run python -m influx_cpu_monitor.writer"
+
+  reader:
+    image: ghcr.io/astral-sh/uv:0.9.11-python3.14-bookworm-slim
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    environment:
+      PYTHONPATH: /app/src
+      UV_PROJECT_ENVIRONMENT: /tmp/uv-reader-venv
+      UV_LINK_MODE: copy
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_ORG: local-org
+      INFLUXDB_BUCKET: system_metrics
+      INFLUXDB_TOKEN: local-dev-token-change-me
+    depends_on:
+      - influxdb
+    command: >
+      sh -c "uv sync && uv run uvicorn influx_cpu_monitor.reader:app --host 0.0.0.0 --port 8000"
