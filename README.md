@@ -31,8 +31,8 @@ docker compose up --build
   - http://localhost:8000/health - general health of the systems
   - http://localhost:8000/metrics?field=cpu_percent&seconds=10
   - http://localhost:8000/metrics?field=memory_percent&seconds=30
-  - http://localhost:8000/metrics?field=temperature_c&seconds=300 - may return empty, dpending on your OS
   - http://localhost:8000/metrics?field=disk_read_bytes_per_sec&seconds=30
+  - http://localhost:8000/metrics?field=temperature_c&seconds=300 - may return empty, depending on your OS
 
 ## Example response
 
