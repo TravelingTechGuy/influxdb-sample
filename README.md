@@ -46,6 +46,10 @@ docker compose up --build
 }
 ```
 
+# Sample client
+
+`client_example.py` demonstrates consuming data from the reader. Run it using `python3 src/influx_cpu_monitor/client_example.py` from the root of the project.
+
 ## Notes
 
 - InfluxDB stores timestamps at high precision, so a 100ms cadence is fine for this starter.
