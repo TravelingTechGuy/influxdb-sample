@@ -3,14 +3,20 @@ from fastapi import FastAPI, Query
 from influx_cpu_monitor.config import settings
 from influx_cpu_monitor.influx import make_client
 
-app = FastAPI(title="Influx CPU Reader")
+app = FastAPI(title="Influx System Metrics Reader")
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.get("/metrics/cpu")
-def read_cpu(seconds: int = Query(default=10, ge=1, le=3600), limit: int = Query(default=1000, ge=1, le=10000)):
+
+@app.get("/metrics")
+def read_metric(
+    field: str = Query(...),
+    seconds: int = Query(default=10, ge=1, le=3600),
+    limit: int = Query(default=2000, ge=1, le=20000),
+):
     client = make_client()
     query_api = client.query_api()
 
@@ -18,7 +24,7 @@ def read_cpu(seconds: int = Query(default=10, ge=1, le=3600), limit: int = Query
 from(bucket: "{settings.influxdb_bucket}")
   |> range(start: -{seconds}s)
   |> filter(fn: (r) => r._measurement == "system")
-  |> filter(fn: (r) => r._field == "cpu_percent")
+  |> filter(fn: (r) => r._field == "{field}")
   |> sort(columns: ["_time"])
   |> limit(n: {limit})
 '''
@@ -32,11 +38,12 @@ from(bucket: "{settings.influxdb_bucket}")
                 "time": record.get_time().isoformat(),
                 "value": record.get_value(),
                 "host": record.values.get("host"),
+                "field": record.get_field(),
             })
 
     return {
         "measurement": "system",
-        "field": "cpu_percent",
+        "field": field,
         "seconds": seconds,
         "points": points,
     }

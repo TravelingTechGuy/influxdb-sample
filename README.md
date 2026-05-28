@@ -2,7 +2,7 @@
 
 A small starter project that:
 - runs InfluxDB 2 in Docker with persistent data under `./data`
-- samples local CPU usage every 100ms and writes it to InfluxDB
+- samples local CPU usage, memory usage, disk usage, and temperature (only on systems that allow it - i.e. not MacOS) every 100ms and writes it to InfluxDB
 - exposes recent samples over HTTP for a web page or dashboard
 
 ## Project layout
@@ -27,7 +27,12 @@ docker compose up --build
 ## Services
 
 - InfluxDB UI: http://localhost:8086
-- Reader API: http://localhost:8000/metrics/cpu?seconds=10
+- Reader API:
+  - http://localhost:8000/health - general health of the systems
+  - http://localhost:8000/metrics?field=cpu_percent&seconds=10
+  - http://localhost:8000/metrics?field=memory_percent&seconds=30
+  - http://localhost:8000/metrics?field=temperature_c&seconds=300 - may return empty, dpending on your OS
+  - http://localhost:8000/metrics?field=disk_read_bytes_per_sec&seconds=30
 
 ## Example response
 
@@ -45,4 +50,4 @@ docker compose up --build
 
 - InfluxDB stores timestamps at high precision, so a 100ms cadence is fine for this starter.
 - `psutil.cpu_percent(interval=None)` returns system-wide CPU usage since the last call, so the writer primes it once before entering the loop.
-- Extend the same pattern for memory and temperature data.
+
